@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export default function Login() {
     const [login, setLogin] = useState('');
@@ -10,7 +11,6 @@ export default function Login() {
         event.preventDefault();
         try {
             await signIn(login, password);
-            // O redirecionamento será tratado automaticamente pelas rotas
             } catch (err) {
                 alert(err.message);
             }
@@ -46,6 +46,9 @@ export default function Login() {
                             Entrar
                         </button>
                     </form>
+                    <p style={{ textAlign: 'center', marginTop: '16px' }}>
+                        Não tem uma conta? <Link to="/cadastro" style={{ color: '#3b82f6' }}>Registe-se</Link>
+                    </p>
                 </div>
             </div>
     );
