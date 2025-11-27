@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Alert,
   StatusBar,
+  RefreshControl,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../../services/api';
@@ -22,6 +23,9 @@ export default function Dashboard({ navigation }: any) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTask, setNewTask] = useState('');
   const [userName, setUserName] = useState('');
+
+  // Estado para controlar a animação de carregamento
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -42,6 +46,13 @@ export default function Dashboard({ navigation }: any) {
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível carregar as tarefas.');
     }
+  }
+
+  // Função chamada quando o usuário puxa a lista para baixo
+  async function onRefresh() {
+    setRefreshing(true); // Mostra a rodinha
+    await loadTasks(); // Busca os dados atualizados
+    setRefreshing(false); // Esconde a rodinha
   }
 
   async function handleAddTask() {
@@ -99,7 +110,7 @@ export default function Dashboard({ navigation }: any) {
         </View>
       </View>
 
-      {/* Input Flutuante (Sobrepõe o cabeçalho) */}
+      {/* Input Flutuante */}
       <View style={styles.inputWrapper}>
         <TextInput
           style={styles.input}
@@ -107,20 +118,33 @@ export default function Dashboard({ navigation }: any) {
           placeholderTextColor="#999"
           value={newTask}
           onChangeText={setNewTask}
+          underlineColorAndroid="transparent"
         />
         <TouchableOpacity style={styles.addButton} onPress={handleAddTask}>
           <Text style={styles.plusText}>+</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Lista */}
+      {/* Lista com Pull to Refresh */}
       <View style={styles.content}>
         <Text style={styles.listTitle}>Minhas Tarefas</Text>
         <FlatList
           data={tasks}
           keyExtractor={item => item._id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 20 }}
+          // O flexGrow ajuda o gesto de refresh a funcionar mesmo com poucos itens
+          contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+          // --- Configuração do Refresh ---
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#6200ee']} // Cor da rodinha no Android
+              tintColor="#6200ee" // Cor da rodinha no iOS
+            />
+          }
+          // ------------------------------
+
           renderItem={({ item }) => (
             <View style={[styles.card, item.completed && styles.cardDone]}>
               <TouchableOpacity
@@ -182,18 +206,18 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginTop: -25, // Faz o input subir e ficar "flutuando" entre o roxo e o cinza
+    marginTop: -25,
   },
   input: {
     flex: 1,
     backgroundColor: '#FFF',
     height: 50,
-    borderRadius: 25, // Bem redondo
+    borderRadius: 25,
     paddingHorizontal: 20,
     fontSize: 16,
     color: '#333',
-    elevation: 4, // Sombra no Android
-    shadowColor: '#000', // Sombra no iOS
+    elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -202,7 +226,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: 50,
     height: 50,
-    backgroundColor: '#03DAC6', // Cor de destaque (Teal)
+    backgroundColor: '#03DAC6',
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
